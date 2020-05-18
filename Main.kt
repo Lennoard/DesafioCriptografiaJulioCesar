@@ -10,6 +10,36 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.nio.charset.Charset
 
+fun main(args: Array<String>) {
+    val app = App()
+
+    println("Retrieving api response...")
+
+    val responseString = app.getResponseJsonString()
+    val responseObject = parseResponse(responseString)
+
+    if (responseObject == null) {
+        println("Failed to parse response from API!")
+    } else {
+        println("Got response from api: $responseString")
+
+        println("Transforming object...")
+        responseObject.decifrado = responseObject.cifrado?.decrypt(responseObject.numero_casas)
+        responseObject.resumo_criptografico = responseObject.decifrado?.toSha1()
+
+        println("Saving file...")
+        val answerFile = File("${System.getProperty("user.home")}/answer.json")
+        answerFile.writeText(Gson().toJson(responseObject))
+        println("File was saved to: $answerFile")
+        println("File contents: $responseObject")
+
+
+        println("Sending back...")
+        println(app.sendPost(answerFile))
+
+    }
+}
+
 inline fun InputStream?.readLines(forEachLine: (String) -> Unit) {
     this?.use { inputStream ->
         inputStream.bufferedReader().use {
@@ -96,35 +126,4 @@ fun parseResponse(responseString: String) : ResponseModel? {
         Gson().fromJson(responseString, ResponseModel::class.java)
     }.getOrNull()
 }
-
-fun main(args: Array<String>) {
-    val app = App()
-
-    println("Retrieving api response...")
-
-    val responseString = app.getResponseJsonString()
-    val responseObject = parseResponse(responseString)
-
-    if (responseObject == null) {
-        println("Failed to parse response from API!")
-    } else {
-        println("Got response from api: $responseString")
-
-        println("Transforming object...")
-        responseObject.decifrado = responseObject.cifrado?.decrypt(responseObject.numero_casas)
-        responseObject.resumo_criptografico = responseObject.decifrado?.toSha1()
-
-        println("Saving file...")
-        val answerFile = File("${System.getProperty("user.home")}/answer.json")
-        answerFile.writeText(Gson().toJson(responseObject))
-        println("File was saved to: $answerFile")
-        println("File contents: $responseObject")
-
-
-        println("Sending back...")
-        println(app.sendPost(answerFile))
-
-    }
-}
-
 
